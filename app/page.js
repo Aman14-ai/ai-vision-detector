@@ -82,6 +82,28 @@ export default function Home() {
     }
   }, [model]);
 
+  useEffect(() => {
+    let wakeLock = null;
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          console.log("wakelock is active.");
+          document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+              wakeLock = await navigator.wakeLock.request('screen');
+              console.log('Wake Lock reacquired');
+            }
+          });
+        }
+      } catch (error) {
+        console.log("error acquiring wakelock:", error.message);
+      }
+    }
+
+    requestWakeLock();
+  }, [])
+
   const detectFrame = async () => {
     if (!videoRef.current || videoRef.current.readyState !== 4) return;
 
@@ -106,13 +128,13 @@ export default function Home() {
         ctx.setLineDash([5, 5]);
         ctx.strokeRect(x, y, width, height);
         ctx.setLineDash([]);
-        
+
         // Glowing effect
         ctx.shadowColor = '#ff6b9d';
         ctx.shadowBlur = 10;
         ctx.strokeRect(x, y, width, height);
         ctx.shadowBlur = 0;
-        
+
         // Label with background
         ctx.fillStyle = 'rgba(255, 107, 157, 0.9)';
         ctx.fillRect(x, y > 30 ? y - 25 : y + height + 5, 120, 20);
@@ -153,33 +175,28 @@ export default function Home() {
   const isDark = theme === 'dark';
 
   return (
-    <div className={`min-h-screen transition-all duration-700 ${
-      isDark 
-        ? 'bg-gradient-to-br from-gray-900 via-purple-900 to-pink-900' 
+    <div className={`min-h-screen transition-all duration-700 ${isDark
+        ? 'bg-gradient-to-br from-gray-900 via-purple-900 to-pink-900'
         : 'bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-100'
-    }`}>
+      }`}>
       {/* Animated background elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className={`absolute -top-10 -left-10 w-72 h-72 rounded-full blur-3xl opacity-20 animate-pulse ${
-          isDark ? 'bg-pink-500' : 'bg-pink-300'
-        }`}></div>
-        <div className={`absolute top-1/2 -right-10 w-96 h-96 rounded-full blur-3xl opacity-10 animate-pulse animation-delay-1000 ${
-          isDark ? 'bg-purple-500' : 'bg-purple-300'
-        }`}></div>
-        <div className={`absolute -bottom-10 left-1/3 w-80 h-80 rounded-full blur-3xl opacity-15 animate-pulse animation-delay-2000 ${
-          isDark ? 'bg-indigo-500' : 'bg-indigo-300'
-        }`}></div>
+        <div className={`absolute -top-10 -left-10 w-72 h-72 rounded-full blur-3xl opacity-20 animate-pulse ${isDark ? 'bg-pink-500' : 'bg-pink-300'
+          }`}></div>
+        <div className={`absolute top-1/2 -right-10 w-96 h-96 rounded-full blur-3xl opacity-10 animate-pulse animation-delay-1000 ${isDark ? 'bg-purple-500' : 'bg-purple-300'
+          }`}></div>
+        <div className={`absolute -bottom-10 left-1/3 w-80 h-80 rounded-full blur-3xl opacity-15 animate-pulse animation-delay-2000 ${isDark ? 'bg-indigo-500' : 'bg-indigo-300'
+          }`}></div>
       </div>
 
       <div className="relative z-10 flex flex-col items-center p-6 min-h-screen">
         {/* Header */}
         <div className="w-full max-w-4xl flex justify-between items-center mb-8">
           <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-2xl backdrop-blur-sm border ${
-              isDark 
-                ? 'bg-white/10 border-white/20' 
+            <div className={`p-3 rounded-2xl backdrop-blur-sm border ${isDark
+                ? 'bg-white/10 border-white/20'
                 : 'bg-white/60 border-white/40'
-            }`}>
+              }`}>
               <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 flex items-center justify-center">
                 <span className="text-white font-bold text-lg">👁</span>
               </div>
@@ -193,14 +210,13 @@ export default function Home() {
               </p>
             </div>
           </div>
-          
-          <button 
+
+          <button
             onClick={toggleTheme}
-            className={`p-3 rounded-2xl backdrop-blur-sm border transition-all duration-300 hover:scale-105 ${
-              isDark 
-                ? 'bg-white/10 border-white/20 hover:bg-white/20' 
+            className={`p-3 rounded-2xl backdrop-blur-sm border transition-all duration-300 hover:scale-105 ${isDark
+                ? 'bg-white/10 border-white/20 hover:bg-white/20'
                 : 'bg-white/60 border-white/40 hover:bg-white/80'
-            }`}
+              }`}
           >
             <span className="text-2xl">{isDark ? '☀️' : '🌙'}</span>
           </button>
@@ -210,26 +226,25 @@ export default function Home() {
         <div className="w-full max-w-4xl grid md:grid-cols-3 gap-8">
           {/* Video Feed */}
           <div className="md:col-span-2">
-            <div className={`relative rounded-3xl overflow-hidden backdrop-blur-sm border-2 transition-all duration-300 ${
-              detecting 
-                ? 'border-pink-500 shadow-2xl shadow-pink-500/25' 
+            <div className={`relative rounded-3xl overflow-hidden backdrop-blur-sm border-2 transition-all duration-300 ${detecting
+                ? 'border-pink-500 shadow-2xl shadow-pink-500/25'
                 : 'border-gray-400 shadow-lg'
-            } ${pulseDetection ? 'animate-pulse border-pink-400' : ''}`}>
-              
+              } ${pulseDetection ? 'animate-pulse border-pink-400' : ''}`}>
+
               {/* Video Container */}
               <div className="relative aspect-video bg-black rounded-3xl overflow-hidden">
-                <video 
-                  ref={videoRef} 
-                  autoPlay 
-                  muted 
-                  playsInline 
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
                   className="w-full h-full object-cover"
                 />
-                <canvas 
-                  ref={canvasRef} 
+                <canvas
+                  ref={canvasRef}
                   className="absolute top-0 left-0 w-full h-full pointer-events-none"
                 />
-                
+
                 {/* Detection Overlay */}
                 {!detecting && (
                   <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center">
@@ -266,15 +281,13 @@ export default function Home() {
           {/* Control Panel */}
           <div className="space-y-6">
             {/* Status Card */}
-            <div className={`p-6 rounded-3xl backdrop-blur-sm border transition-all duration-300 ${
-              isDark 
-                ? 'bg-white/10 border-white/20' 
+            <div className={`p-6 rounded-3xl backdrop-blur-sm border transition-all duration-300 ${isDark
+                ? 'bg-white/10 border-white/20'
                 : 'bg-white/60 border-white/40'
-            }`}>
+              }`}>
               <div className="flex items-center gap-3 mb-4">
-                <div className={`w-3 h-3 rounded-full animate-pulse ${
-                  detecting ? 'bg-green-500' : 'bg-red-500'
-                }`}></div>
+                <div className={`w-3 h-3 rounded-full animate-pulse ${detecting ? 'bg-green-500' : 'bg-red-500'
+                  }`}></div>
                 <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>
                   System Status
                 </h3>
@@ -285,26 +298,23 @@ export default function Home() {
             </div>
 
             {/* Detection Count */}
-            <div className={`p-6 rounded-3xl backdrop-blur-sm border transition-all duration-300 ${
-              personCount > 0 
-                ? 'bg-gradient-to-br from-pink-500/20 to-purple-500/20 border-pink-500/50' 
-                : isDark 
-                  ? 'bg-white/10 border-white/20' 
+            <div className={`p-6 rounded-3xl backdrop-blur-sm border transition-all duration-300 ${personCount > 0
+                ? 'bg-gradient-to-br from-pink-500/20 to-purple-500/20 border-pink-500/50'
+                : isDark
+                  ? 'bg-white/10 border-white/20'
                   : 'bg-white/60 border-white/40'
-            }`}>
+              }`}>
               <div className="text-center">
-                <div className={`text-4xl font-bold mb-2 transition-all duration-300 ${
-                  personCount > 0 
-                    ? 'text-pink-500 scale-110' 
+                <div className={`text-4xl font-bold mb-2 transition-all duration-300 ${personCount > 0
+                    ? 'text-pink-500 scale-110'
                     : isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>
+                  }`}>
                   {personCount}
                 </div>
-                <p className={`text-sm font-medium ${
-                  personCount > 0 
-                    ? 'text-pink-600' 
+                <p className={`text-sm font-medium ${personCount > 0
+                    ? 'text-pink-600'
                     : isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>
+                  }`}>
                   {personCount === 1 ? 'Person Detected' : 'People Detected'}
                 </p>
                 <div className="mt-3 text-2xl">
@@ -317,11 +327,10 @@ export default function Home() {
             <div className="space-y-4">
               <button
                 onClick={toggleDetecting}
-                className={`w-full p-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 ${
-                  detecting
+                className={`w-full p-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 ${detecting
                     ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg hover:shadow-xl'
                     : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg hover:shadow-xl'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-center gap-2">
                   <span className="text-xl">{detecting ? '⏸️' : '▶️'}</span>
@@ -332,11 +341,10 @@ export default function Home() {
               <button
                 onClick={saveSnapshot}
                 disabled={personCount === 0}
-                className={`w-full p-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 ${
-                  personCount > 0
+                className={`w-full p-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 ${personCount > 0
                     ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:shadow-xl'
                     : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-center gap-2">
                   <span className="text-xl">📸</span>
@@ -346,11 +354,10 @@ export default function Home() {
             </div>
 
             {/* Stats */}
-            <div className={`p-4 rounded-2xl backdrop-blur-sm border ${
-              isDark 
-                ? 'bg-white/5 border-white/10' 
+            <div className={`p-4 rounded-2xl backdrop-blur-sm border ${isDark
+                ? 'bg-white/5 border-white/10'
                 : 'bg-white/40 border-white/30'
-            }`}>
+              }`}>
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div>
                   <div className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
@@ -375,7 +382,7 @@ export default function Home() {
       </div>
 
       <canvas ref={snapshotCanvasRef} className="hidden" />
-      
+
       <style jsx>{`
         .animation-delay-1000 {
           animation-delay: 1s;
